@@ -1,0 +1,7 @@
+streamlit==1.35.0
+tensorflow==2.15.0
+opencv-python-headless==4.9.0.80
+gTTS==2.5.1
+folium==0.16.0
+streamlit-folium==0.16.1
+numpy==1.26.4
