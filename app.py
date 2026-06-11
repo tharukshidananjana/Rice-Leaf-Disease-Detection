@@ -51,7 +51,7 @@ ui_labels = {
     }
 }
 
-# ---- 1. KNOWLEDGE BASE ----
+
 # ---- 1. COMPLETE MULTILINGUAL KNOWLEDGE BASE ----
 rice_disease_knowledge_base = {
     "Leaf Smut": {
@@ -111,7 +111,6 @@ rice_disease_knowledge_base = {
     }
 }
 
-
 class_mapping = {
     0: "bacterial_leaf_blight", 1: "brown_spot", 2: "healthy", 3: "Leaf Smut",
     4: "leaf_blast", 5: "leaf_scald", 6: "narrow_brown_spot", 7: "neck_blast",
@@ -121,12 +120,14 @@ class_mapping = {
 # ---- 2. LOAD MODEL ----
 @st.cache_resource
 def load_model():
+    # Load the trained machine learning model
     return tf.keras.models.load_model('rice_leaf_disease_model.keras')
 
 model = load_model()
 
 # ---- 3. SEVERITY & AUDIO LOGIC ----
 def calculate_severity(img_bytes):
+    # Calculate disease severity using image processing
     nparr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -135,6 +136,7 @@ def calculate_severity(img_bytes):
     return round(severity, 2)
 
 def play_audio_text(text, lang_code):
+    # Convert text to speech and play in the browser
     tts = gTTS(text=text, lang=lang_code, slow=False)
     tts.save("response.mp3")
     with open("response.mp3", "rb") as f:
@@ -142,6 +144,7 @@ def play_audio_text(text, lang_code):
     st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
 
 # ---- 4. UI DISPLAY ----
+# Sidebar for language selection
 lang_choice = st.sidebar.selectbox("🌐 Select Language / භාෂාව තෝරන්න / மொழி தேர்வு", ["English", "සිංහල", "தமிழ்"])
 selected_lang = {"English": "en", "සිංහල": "si", "தமிழ்": "ta"}[lang_choice]
 labels = ui_labels[selected_lang]
@@ -149,21 +152,25 @@ labels = ui_labels[selected_lang]
 st.title(labels["main_title"])
 st.write(labels["sub_title"])
 
+# File uploader for the rice leaf image
 uploaded_file = st.file_uploader(labels["upload_text"], type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     file_bytes = uploaded_file.read()
     st.image(uploaded_file, width=300)
     
+    # Process image for model prediction
     img = cv2.resize(cv2.imdecode(np.frombuffer(file_bytes, np.uint8), 1), (224, 224)) / 255.0
     pred = class_mapping[np.argmax(model.predict(np.expand_dims(img, axis=0)))]
     info = rice_disease_knowledge_base[pred][selected_lang]
     
+    # Display disease info, symptoms, and treatments
     st.subheader(f"🔍 {labels['title']}: {info['disease_name']}")
     st.write(f"**{labels['symptoms']}:** {info['symptoms']}")
     st.write(f"**{labels['chemical']}:** {info['chemical_treatment']}")
     st.write(f"**{labels['organic']}:** {info['organic_treatment']}")
     
+    # Button to play audio instructions
     if st.button(f"🔊 {labels['listen']}"):
         play_audio_text(f"{info['disease_name']}. {info['symptoms']}", selected_lang)
 
@@ -171,5 +178,13 @@ if uploaded_file is not None:
     st.subheader(labels["map_title"])
     st.write(labels["map_desc"])
     
-    m = folium.Map(location=[8.7542, 80.4982], zoom_start=12)
+    # Initialize the map
+    m = folium.Map(location=[8.7542, 80.4982], zoom_start=14)
+    # Add user location marker (Blue)
+    folium.Marker([8.7542, 80.4982], popup="Your Location", icon=folium.Icon(color="blue", icon="home")).add_to(m)
+    # Add agrarian support centers (Red)
+    folium.Marker([8.7580, 80.5020], popup="Agrarian Center 1", icon=folium.Icon(color="red", icon="info-sign")).add_to(m)
+    folium.Marker([8.7490, 80.4890], popup="Fertilizer Store", icon=folium.Icon(color="red", icon="shopping-cart")).add_to(m)
+    
+    # Render the map
     st_folium(m, width=800, height=300)
