@@ -1,6 +1,8 @@
 🌾 Rice Leaf Disease Smart Diagnostic Hub
 This project is an advanced AI-powered platform designed to assist paddy farmers in identifying rice leaf diseases accurately. By leveraging deep learning and image processing, it provides instant diagnosis, severity analysis, and localized agricultural support.
 
+Live Link : [https://rice-leaf-disease-detection1.streamlit.app/](url)
+
 🌟 Key Features
 AI-Powered Diagnosis: Instantly detects 11 different rice leaf diseases using a trained TensorFlow model.
 
