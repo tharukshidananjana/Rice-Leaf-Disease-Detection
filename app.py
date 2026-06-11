@@ -2,7 +2,6 @@ import streamlit as st
 import tensorflow as tf
 import cv2
 import numpy as np
-import os
 import folium
 from streamlit_folium import st_folium
 from gtts import gTTS
@@ -11,43 +10,54 @@ import base64
 # Page Configuration
 st.set_page_config(page_title="Rice Leaf Disease Intelligence Hub", layout="wide")
 
+# Custom CSS for better styling
+st.markdown("""
+    <style>
+    .main {background-color: #f5f7f6;}
+    .stButton>button {width: 100%; border-radius: 5px; height: 3em; background-color: #2e7d32; color: white;}
+    </style>
+    """, unsafe_allow_html=True)
+
 # ---- 0. MULTILINGUAL UI LABELS DICTIONARY ----
 ui_labels = {
     "en": {
         "main_title": "🌾 Rice Leaf Disease Smart Diagnostic Hub",
         "sub_title": "An Advanced Multilingual AI Platform for Paddy Farmers",
         "upload_text": "📸 Upload Rice Leaf Image...",
-        "title": "Info", 
+        "title": "Diagnosis Result", 
         "symptoms": "Symptoms", 
         "chemical": "Chemical Solution", 
         "organic": "Organic Solution",
         "listen": "Listen to Instructions",
-        "map_title": "🗺️ Nearby Agrarian Services & Fertilizer Stores",
-        "map_desc": "Showing closest support hubs for input coordinates:"
+        "map_title": "🗺️ Nearby Agrarian Services",
+        "map_desc": "Closest support hubs:",
+        "severity": "Infection Severity"
     },
     "si": {
         "main_title": "🌾 ගොයම් කොළ රෝග හඳුනා ගැනීමේ ස්මාර්ට් මධ්‍යස්ථානය",
         "sub_title": "ගොවීන් සඳහා වූ උසස් බහුභාෂා කෘෂි AI වේදිකාව",
         "upload_text": "📸 ගොයම් කොළයේ පින්තූරයක් උඩුගත කරන්න...",
-        "title": "තොරතුරු", 
+        "title": "රෝග විනිශ්චය ප්‍රතිඵලය", 
         "symptoms": "රෝග ලක්ෂණ", 
         "chemical": "රසායනික පිළියම්", 
         "organic": "කාබනික පිළියම්",
         "listen": "උපදෙස්වලට සවන් දෙන්න",
-        "map_title": "🗺️ අසල ඇති කෘෂිකර්ම සේවා සහ පොහොර ගබඩා",
-        "map_desc": "ඔබේ කුඹුරට ආසන්නතම සේවා මධ්‍යස්ථාන:"
+        "map_title": "🗺️ අසල ඇති කෘෂිකර්ම සේවා",
+        "map_desc": "ආසන්නතම සේවා මධ්‍යස්ථාන:",
+        "severity": "රෝගී තීව්‍රතාවය"
     },
     "ta": {
         "main_title": "🌾 நெல் இலை நோய் கண்டறியும் ஸ்மார்ட் மையம்",
         "sub_title": "விவசாயிகளுக்கான மேம்பட்ட பன்மொழி AI தளம்",
         "upload_text": "📸 நெல் இலை படத்தை பதிவேற்றவும்...",
-        "title": "தகவல்", 
+        "title": "நோய் கண்டறியும் முடிவு", 
         "symptoms": "அறிகுறிகள்", 
         "chemical": "இரசாயன தீர்வு", 
         "organic": "இயற்கை தீர்வு",
         "listen": "வழிமுறைகளைக் கேட்கவும்",
-        "map_title": "🗺️ அருகிலுள்ள விவசாய சேவைகள் மற்றும் உரக் கடைகள்",
-        "map_desc": "அருகிலுள்ள சேவை மையங்களைக் காண்பிக்கிறது:"
+        "map_title": "🗺️ அருகிலுள்ள விவசாய சேவைகள்",
+        "map_desc": "அருகிலுள்ள சேவை மையங்கள்:",
+        "severity": "பாதிப்பு அளவு"
     }
 }
 
@@ -120,14 +130,12 @@ class_mapping = {
 # ---- 2. LOAD MODEL ----
 @st.cache_resource
 def load_model():
-    # Load the trained machine learning model
     return tf.keras.models.load_model('rice_leaf_disease_model.keras')
 
 model = load_model()
 
 # ---- 3. SEVERITY & AUDIO LOGIC ----
 def calculate_severity(img_bytes):
-    # Calculate disease severity using image processing
     nparr = np.frombuffer(img_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -136,7 +144,6 @@ def calculate_severity(img_bytes):
     return round(severity, 2)
 
 def play_audio_text(text, lang_code):
-    # Convert text to speech and play in the browser
     tts = gTTS(text=text, lang=lang_code, slow=False)
     tts.save("response.mp3")
     with open("response.mp3", "rb") as f:
@@ -144,47 +151,51 @@ def play_audio_text(text, lang_code):
     st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
 
 # ---- 4. UI DISPLAY ----
-# Sidebar for language selection
-lang_choice = st.sidebar.selectbox("🌐 Select Language / භාෂාව තෝරන්න / மொழி தேர்வு", ["English", "සිංහල", "தமிழ்"])
+st.sidebar.title("Settings")
+lang_choice = st.sidebar.radio("Select Language", ["English", "සිංහල", "தமிழ்"])
 selected_lang = {"English": "en", "සිංහල": "si", "தமிழ்": "ta"}[lang_choice]
 labels = ui_labels[selected_lang]
 
 st.title(labels["main_title"])
-st.write(labels["sub_title"])
+st.info(labels["sub_title"])
 
-# File uploader for the rice leaf image
 uploaded_file = st.file_uploader(labels["upload_text"], type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
+    col1, col2 = st.columns([1, 2])
     file_bytes = uploaded_file.read()
-    st.image(uploaded_file, width=300)
     
-    # Process image for model prediction
-    img = cv2.resize(cv2.imdecode(np.frombuffer(file_bytes, np.uint8), 1), (224, 224)) / 255.0
-    pred = class_mapping[np.argmax(model.predict(np.expand_dims(img, axis=0)))]
-    info = rice_disease_knowledge_base[pred][selected_lang]
+    with col1:
+        st.image(uploaded_file, use_column_width=True)
+        severity_val = calculate_severity(file_bytes)
+        st.metric(label=labels["severity"], value=f"{severity_val}%")
     
-    # Display disease info, symptoms, and treatments
-    st.subheader(f"🔍 {labels['title']}: {info['disease_name']}")
-    st.write(f"**{labels['symptoms']}:** {info['symptoms']}")
-    st.write(f"**{labels['chemical']}:** {info['chemical_treatment']}")
-    st.write(f"**{labels['organic']}:** {info['organic_treatment']}")
-    
-    # Button to play audio instructions
-    if st.button(f"🔊 {labels['listen']}"):
-        play_audio_text(f"{info['disease_name']}. {info['symptoms']}", selected_lang)
+    with col2:
+        img = cv2.resize(cv2.imdecode(np.frombuffer(file_bytes, np.uint8), 1), (224, 224)) / 255.0
+        pred = class_mapping[np.argmax(model.predict(np.expand_dims(img, axis=0)))]
+        info = rice_disease_knowledge_base[pred][selected_lang]
+        
+        st.subheader(f"🔍 {labels['title']}: {info['disease_name']}")
+        with st.expander("📌 View Symptoms", expanded=True):
+            st.write(info['symptoms'])
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.success(f"**{labels['chemical']}**")
+            st.write(info['chemical_treatment'])
+        with col_b:
+            st.warning(f"**{labels['organic']}**")
+            st.write(info['organic_treatment'])
+            
+        if st.button(f"🔊 {labels['listen']}"):
+            play_audio_text(f"{info['disease_name']}. {info['symptoms']}", selected_lang)
 
     st.write("---")
     st.subheader(labels["map_title"])
     st.write(labels["map_desc"])
     
-    # Initialize the map
     m = folium.Map(location=[8.7542, 80.4982], zoom_start=14)
-    # Add user location marker (Blue)
     folium.Marker([8.7542, 80.4982], popup="Your Location", icon=folium.Icon(color="blue", icon="home")).add_to(m)
-    # Add agrarian support centers (Red)
     folium.Marker([8.7580, 80.5020], popup="Agrarian Center 1", icon=folium.Icon(color="red", icon="info-sign")).add_to(m)
     folium.Marker([8.7490, 80.4890], popup="Fertilizer Store", icon=folium.Icon(color="red", icon="shopping-cart")).add_to(m)
-    
-    # Render the map
-    st_folium(m, width=800, height=300)
+    st_folium(m, width=1000, height=300)
