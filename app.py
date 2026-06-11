@@ -31,7 +31,8 @@ ui_labels = {
         "listen": "Listen to Instructions",
         "map_title": "🗺️ Nearby Agrarian Services",
         "map_desc": "Closest support hubs:",
-        "severity": "Infection Severity"
+        "severity": "Infection Severity",
+        "view_symptoms": "📌 View Symptoms"
     },
     "si": {
         "main_title": "🌾 ගොයම් කොළ රෝග හඳුනා ගැනීමේ ස්මාර්ට් මධ්‍යස්ථානය",
@@ -44,7 +45,8 @@ ui_labels = {
         "listen": "උපදෙස්වලට සවන් දෙන්න",
         "map_title": "🗺️ අසල ඇති කෘෂිකර්ම සේවා",
         "map_desc": "ආසන්නතම සේවා මධ්‍යස්ථාන:",
-        "severity": "රෝගී තීව්‍රතාවය"
+        "severity": "රෝගී තීව්‍රතාවය",
+        "view_symptoms": "📌 රෝග ලක්ෂණ බලන්න"
     },
     "ta": {
         "main_title": "🌾 நெல் இலை நோய் கண்டறியும் ஸ்மார்ட் மையம்",
@@ -57,7 +59,8 @@ ui_labels = {
         "listen": "வழிமுறைகளைக் கேட்கவும்",
         "map_title": "🗺️ அருகிலுள்ள விவசாய சேவைகள்",
         "map_desc": "அருகிலுள்ள சேவை மையங்கள்:",
-        "severity": "பாதிப்பு அளவு"
+        "severity": "பாதிப்பு அளவு",
+        "view_symptoms": "📌 அறிகுறிகளைக் காணவும்"
     }
 }
 
@@ -176,7 +179,7 @@ if uploaded_file is not None:
         info = rice_disease_knowledge_base[pred][selected_lang]
         
         st.subheader(f"🔍 {labels['title']}: {info['disease_name']}")
-        with st.expander("📌 View Symptoms", expanded=True):
+        with st.expander(labels["view_symptoms"], expanded=True):
             st.write(info['symptoms'])
         
         col_a, col_b = st.columns(2)
